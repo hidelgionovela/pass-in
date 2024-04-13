@@ -4,14 +4,19 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import rocketseat.hdlg.passin.domain.attendee.Attendee;
 import rocketseat.hdlg.passin.domain.event.Event;
+import rocketseat.hdlg.passin.domain.event.exceptions.EventFullException;
 import rocketseat.hdlg.passin.domain.event.exceptions.EventNotFoundException;
+import rocketseat.hdlg.passin.dto.attendee.AttendeeIdDTO;
+import rocketseat.hdlg.passin.dto.attendee.AttendeeRequestDTO;
 import rocketseat.hdlg.passin.dto.event.EventIdDTO;
 import rocketseat.hdlg.passin.dto.event.EventRequestDTO;
 import rocketseat.hdlg.passin.dto.event.EventResponseDTO;
 import rocketseat.hdlg.passin.repositories.EventRepository;
 
 import java.text.Normalizer;
+import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -60,6 +65,31 @@ public class EventService {
                 .toLowerCase();
 
     }
+
+    public AttendeeIdDTO registerAttendeeOnEvent(String eventId, AttendeeRequestDTO attendeeRequestDTO){
+        this.attendeeService.verifyAttendeeSubscription(attendeeRequestDTO.email(), eventId);
+
+        Event event = this.getEventById(eventId);
+        List<Attendee> attendeeList = this.attendeeService.getAllAttendeesFromEvent(eventId);
+
+        if(event.getMaximumAttendees() <= attendeeList.size()) throw new EventFullException("Evento esta lotado");
+
+        Attendee newAttendee = new Attendee();
+        newAttendee.setName(attendeeRequestDTO.name());
+        newAttendee.setEmail(attendeeRequestDTO.email());
+        newAttendee.setEvent(event);
+        newAttendee.setCreatedAt(LocalDateTime.now());
+        this.attendeeService.registerAttendee(newAttendee);
+
+        return new AttendeeIdDTO(newAttendee.getId());
+
+    }
+
+    private Event getEventById(String eventId){
+        return this.eventRepository.findById(eventId).orElseThrow(() -> new EventNotFoundException("Event not fount with ID:" + eventId));
+    }
+
+
 
 
 }

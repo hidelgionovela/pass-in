@@ -4,10 +4,13 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.util.UriComponentsBuilder;
+import rocketseat.hdlg.passin.dto.attendee.AttendeeIdDTO;
+import rocketseat.hdlg.passin.dto.attendee.AttendeeRequestDTO;
 import rocketseat.hdlg.passin.dto.attendee.AttendeesListResponseDTO;
 import rocketseat.hdlg.passin.dto.event.EventIdDTO;
 import rocketseat.hdlg.passin.dto.event.EventRequestDTO;
 import rocketseat.hdlg.passin.dto.event.EventResponseDTO;
+import rocketseat.hdlg.passin.service.AttendeeService;
 import rocketseat.hdlg.passin.service.EventService;
 
 @RestController
@@ -16,6 +19,7 @@ import rocketseat.hdlg.passin.service.EventService;
 public class EventController {
 
     private final EventService eventService;
+    private final AttendeeService attendeeService;
 
     @GetMapping("/{id}")
     public ResponseEntity<EventResponseDTO> getEvent(@PathVariable String id){
@@ -30,6 +34,15 @@ public class EventController {
         var uri = uriComponentsBuilder.path("/events/{id}").buildAndExpand(eventIdDTO.eventId()).toUri();
 
         return ResponseEntity.created(uri).body(eventIdDTO);
+    }
+
+    @PostMapping("/{eventId}/attendees")
+    public ResponseEntity<AttendeeIdDTO> registerParticipant(@PathVariable String eventId, @RequestBody AttendeeRequestDTO body, UriComponentsBuilder uriComponentsBuilder){
+        AttendeeIdDTO attendeeIdDTO = this.eventService.registerAttendeeOnEvent(eventId, body);
+
+        var uri = uriComponentsBuilder.path("/attendees/{attendId}/badge").buildAndExpand(attendeeIdDTO.attendeeId()).toUri();
+
+        return ResponseEntity.created(uri).body(attendeeIdDTO);
     }
 
     @GetMapping("/attendees/{id}")
